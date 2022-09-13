@@ -1,3 +1,7 @@
 venv
 logs
 *.log
+.vscode
+
+main.toml
+testing.toml

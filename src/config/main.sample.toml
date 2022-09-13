@@ -1,0 +1,6 @@
+[databricks]
+server_hostname = "xxxx.cloud.databricks.com"
+http_path = "/sql/1.0/endpoints/xxxxxxxxxxxxxxxx"
+access_token = "dapixxxxxxxxxxxxxxxxxxxxxxxxxxx"
+catalog = "hive_metastore"
+schema = "default"
