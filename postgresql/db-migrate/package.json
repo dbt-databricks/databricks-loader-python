@@ -1,0 +1,10 @@
+{
+    "scripts": {
+        "create": "db-migrate create db-migrate --sql-file",
+        "up": "db-migrate up"
+    },
+    "dependencies": {
+        "db-migrate": "^0.11.5",
+        "db-migrate-pg": "^0.5.0"
+    }
+}

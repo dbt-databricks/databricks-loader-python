@@ -1,0 +1,10 @@
+{
+    "dev": {
+        "driver": "pg",
+        "user": "mask_network",
+        "password": "xxxxxxxxx",
+        "host": "localhost",
+        "port": 5432,
+        "database": "datawaves_data"
+    }
+}
