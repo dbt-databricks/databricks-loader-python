@@ -1,12 +1,13 @@
 # -*- coding:utf-8 -*-
-"""
-@Author: Zella
-@Date: 2022-09-13 14:18:05
-@LastEditors: Zella
-@LastEditTime: 2022-09-13 14:20:13
-@FilePath: /databricks-loader-python/src/model/databricks_model.py
-@Description: databricks singleton model
-"""
+'''
+Author: Zella
+Date: 2022-09-13 14:18:05
+LastEditors: Zella
+LastEditTime: 2022-09-14 01:09:17
+FilePath: /databricks-loader-python/src/model/databricks_model.py
+Description: databricks singleton model
+'''
+import logging
 from databricks import sql
 
 
@@ -51,8 +52,12 @@ class DatabricksModel(metaclass=Singleton):
         @description: query data for raw statement
         @return List[Row]
         """
-        cursor = self.connection.cursor()
-        cursor.execute(query)
-        result = cursor.fetchall()
-        cursor.close()
-        return result
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute(query)
+            result = cursor.fetchall()
+            return result
+        except Exception as ex:
+            logging.exception(ex)
+        finally:
+            cursor.close()
