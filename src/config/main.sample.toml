@@ -4,3 +4,10 @@ http_path = "/sql/1.0/endpoints/xxxxxxxxxxxxxxxx"
 access_token = "dapixxxxxxxxxxxxxxxxxxxxxxxxxxx"
 catalog = "hive_metastore"
 schema = "default"
+
+[postgresql]
+database = "datawaves_data"
+user = "mask_network"
+password = "xxxxxxxxxxxxxxxx"
+host = "localhost or url"
+port = "5432"

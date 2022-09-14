@@ -13,6 +13,8 @@ import toml
 
 MAX_INT32 = 2147483647
 MAX_UINT32 = 4294967295
+MONTH_SECORNDS = 2592000  # 24 * 60 * 60 * 30
+YEAR_SECORNDS = 946080000  # 365 * MONTH_SECORNDS
 
 
 INTERVAL = {
@@ -31,6 +33,14 @@ DATABRICKS_SETTINGS = {
     "schema": "",
 }
 
+POSTGRESQL_SETTINGS = {
+    "database": "",
+    "user": "",
+    "password": "",
+    "host": "",
+    "port": "",
+}
+
 
 def load_settings(is_dev=False):
     """
@@ -38,11 +48,16 @@ def load_settings(is_dev=False):
     """
     global INTERVAL
     global DATABRICKS_SETTINGS
+    global POSTGRESQL_SETTINGS
     if is_dev:
         DATABRICKS_SETTINGS = load_databricks_settings(
-            "./config/main.sample.toml")
+            "./config/testing.toml")
+        POSTGRESQL_SETTINGS = load_postgresql_settings(
+            "./config/testing.toml")
     else:
         DATABRICKS_SETTINGS = load_databricks_settings(
+            "./config/main.toml")
+        POSTGRESQL_SETTINGS = load_postgresql_settings(
             "./config/main.toml")
 
 
@@ -62,5 +77,25 @@ def load_databricks_settings(config_file):
             "schema": config["databricks"]["schema"],
         }
         return databricks_settings
+    except Exception as ex:
+        logging.exception(ex)
+
+
+def load_postgresql_settings(config_file):
+    """
+    @description: load postgresql auth configurations
+    @params: config_file
+    @return postgresql_settings
+    """
+    try:
+        config = toml.load(config_file)
+        postgresql_settings = {
+            "database": config["postgresql"]["database"],
+            "user": config["postgresql"]["user"],
+            "password": config["postgresql"]["password"],
+            "host": config["postgresql"]["host"],
+            "port": config["postgresql"]["port"],
+        }
+        return postgresql_settings
     except Exception as ex:
         logging.exception(ex)

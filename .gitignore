@@ -5,3 +5,4 @@ logs
 
 main.toml
 testing.toml
+database.json
