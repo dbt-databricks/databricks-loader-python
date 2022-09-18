@@ -11,3 +11,7 @@ user = "mask_network"
 password = "xxxxxxxxxxxxxxxx"
 host = "localhost or url"
 port = "5432"
+
+[path]
+datapath = "/home/user/datapath"
+logpath = "/home/user/logpath"
