@@ -1,8 +1,10 @@
 venv
 logs
+log
 *.log
 .vscode
 
 main.toml
 testing.toml
 database.json
+database.test.json
