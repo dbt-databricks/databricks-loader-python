@@ -3,7 +3,7 @@
 Author: Zella
 Date: 2022-09-14 00:02:12
 LastEditors: Zella
-LastEditTime: 2022-09-14 01:01:26
+LastEditTime: 2022-09-19 04:22:18
 FilePath: /databricks-loader-python/src/model/postgresql_model.py
 Description: postgresql singleton model
 '''
@@ -39,6 +39,12 @@ class PostgreSQLModel(metaclass=Singleton):
                                            host=host,
                                            port=port)
 
+    def get_conn(self):
+        '''
+        description: use connection
+        '''
+        return self.connection
+
     def select(self, columns, table_name, where_sql):
         """
         @description: query data for columns
@@ -60,7 +66,8 @@ class PostgreSQLModel(metaclass=Singleton):
         """
         @description: query data for raw statement
         """
-        cursor = self.connection.cursor()
+        cursor = self.connection.cursor(
+            cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute(query)
         result = cursor.fetchall()
         cursor.close()

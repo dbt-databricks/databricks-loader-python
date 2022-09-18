@@ -24,6 +24,11 @@ INTERVAL = {
     (50000, MAX_INT32): "Dayly",
 }
 
+Settings = {
+    "datapath": "./data",
+    "logpath": "./log"
+}
+
 
 DATABRICKS_SETTINGS = {
     "server_hostname": "",
@@ -42,23 +47,26 @@ POSTGRESQL_SETTINGS = {
 }
 
 
-def load_settings(is_dev=False):
+def load_settings(env="test"):
     """
     @description: load configurations from file
     """
+    global Settings
     global INTERVAL
     global DATABRICKS_SETTINGS
     global POSTGRESQL_SETTINGS
-    if is_dev:
-        DATABRICKS_SETTINGS = load_databricks_settings(
-            "./config/testing.toml")
-        POSTGRESQL_SETTINGS = load_postgresql_settings(
-            "./config/testing.toml")
-    else:
-        DATABRICKS_SETTINGS = load_databricks_settings(
-            "./config/main.toml")
-        POSTGRESQL_SETTINGS = load_postgresql_settings(
-            "./config/main.toml")
+
+    config_file = "/var/task/dataloader/src/config/main.toml"
+    if env == "test":
+        config_file = "/var/task/dataloader/src/config/testing.toml"
+    elif env == "dev":
+        config_file = "./config/testing.toml"
+
+    config = toml.load(config_file)
+    Settings["datapath"] = config["path"]["datapath"]
+    Settings["logpath"] = config["path"]["logpath"]
+    DATABRICKS_SETTINGS = load_databricks_settings(config_file)
+    POSTGRESQL_SETTINGS = load_postgresql_settings(config_file)
 
 
 def load_databricks_settings(config_file):
