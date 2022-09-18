@@ -3,7 +3,7 @@
         "driver": "pg",
         "user": "mask_network",
         "password": "xxxxxxxxx",
-        "host": "localhost",
+        "host": "localhost or host.docker.internal",
         "port": 5432,
         "database": "datawaves_data"
     }
