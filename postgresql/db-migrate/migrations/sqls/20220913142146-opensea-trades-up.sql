@@ -1,6 +1,6 @@
 /* Replace with your SQL commands */
 CREATE TABLE opensea_trades (
-    tx_hash char(66) NOT NULL PRIMARY KEY,
+    tx_hash char(66) NOT NULL,
     blockchain varchar(24),
     platform varchar(24),
     nft_token_id varchar(64),

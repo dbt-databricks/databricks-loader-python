@@ -13,7 +13,7 @@ peri:
 
 # Do database migration.
 migrate: peri
-	cd db-migrate && db-migrate up -v
+	cd db-migrate && db-migrate up -v --config database.test.json
 
 clean:
 	docker-compose down -v
