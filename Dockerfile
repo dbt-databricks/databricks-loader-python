@@ -6,6 +6,8 @@ WORKDIR /var/task/dataloader
 
 RUN mkdir -p /var/task/dataloader/postgresql
 RUN mkdir -p /var/task/dataloader/src
+RUN mkdir -p /var/task/dataloader/log
+RUN mkdir -p /var/task/dataloader/data
 
 COPY run.sh .
 COPY requirements.txt .
@@ -13,5 +15,5 @@ COPY supervisord.conf .
 COPY postgresql ./postgresql
 COPY src ./src
 
-# ENTRYPOINT ["./run.sh"]
-CMD ["./run.sh"]
+ENTRYPOINT ["./run.sh"]
+# CMD ["./run.sh"]

@@ -6,5 +6,6 @@ log
 
 main.toml
 testing.toml
+dev.toml
 database.json
 database.test.json
