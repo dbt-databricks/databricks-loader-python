@@ -60,7 +60,7 @@ def load_settings(env="test"):
     if env == "test":
         config_file = "/var/task/dataloader/src/config/testing.toml"
     elif env == "dev":
-        config_file = "./config/testing.toml"
+        config_file = "./config/dev.toml"
 
     config = toml.load(config_file)
     Settings["datapath"] = config["path"]["datapath"]

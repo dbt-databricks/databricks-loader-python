@@ -3,7 +3,7 @@
 Author: Zella
 Date: 2022-09-13 15:09:19
 LastEditors: Zella
-LastEditTime: 2022-09-19 04:48:08
+LastEditTime: 2022-09-19 18:37:28
 FilePath: /databricks-loader-python/src/service/opensea_trades.py
 Description:
 '''
@@ -39,94 +39,97 @@ class OpenseaTrades(object):
             % (start_date, end_date)
         )
 
-        ccnt = 0
         for row in count_result:
-            # 检查行数
             row_dict = row.asDict()
-            start = row_dict["date"] + " 00:00:00"
-            end = row_dict["date"] + " 23:59:59"
-            res = pg_model.select_raw(
-                """SELECT COUNT(*) FROM opensea_trades \
-                WHERE block_time >= timestamp '%s' AND block_time <= timestamp '%s'"""
-                % (start, end)
-            )
-            if not res:
-                continue
-            pg_cnt = res[0]["count"]
-            if pg_cnt == row_dict["count"]:
-                logging.info(
-                    "date=%s no changes. databricks.count=%d postgresql.count=%d", row_dict["date"], row_dict["count"], pg_cnt)
-                continue
-            logging.info(
-                "date=%s need update. databricks.count=%d postgresql.count=%d", row_dict["date"], row_dict["count"], pg_cnt)
-
-            fw = open(setting.Settings["datapath"] + "/offline/opensea_trades_%s.csv" %
-                      row_dict["date"], "w", encoding="utf-8")
-            # dumps文件
-            base_ts = time.mktime(time.strptime(row_dict["date"], "%Y-%m-%d"))
-            if 0 < row_dict["count"] < 5000:
-                # 整天
-                step = 1440
-                interval = list(range(0, 1441, int(step)))
-            elif 5000 <= row_dict["count"] < 10000:
-                # 半天
-                step = 1440 / 2
-                interval = list(range(0, 1441, int(step)))
-            elif 10000 <= row_dict["count"] < 50000:
-                step = 1440 / 12
-                interval = list(range(0, 1441, int(step)))
-            else:
-                step = 1440 / 24
-                interval = list(range(0, 1441, int(step)))
-
-            interval_date = [time.strftime(
-                "%Y-%m-%d %H:%M:%S", time.localtime(base_ts + x * 60)) for x in interval]
-            for i in range(0, len(interval_date)-1):
-                ss = interval_date[i]
-                ee = interval_date[i+1]
-                res = dbt_model.select_raw(
-                    """SELECT * FROM opensea_trades \
-                    WHERE block_time >= '%s' AND block_time < '%s' \
-                    """ % (ss, ee)
+            try:
+                start = row_dict["date"] + " 00:00:00"
+                end = row_dict["date"] + " 23:59:59"
+                res = pg_model.select_raw(
+                    """SELECT COUNT(*) FROM opensea_trades \
+                    WHERE block_time >= timestamp '%s' AND block_time <= timestamp '%s'"""
+                    % (start, end)
                 )
-                logging.info("[%s, %s] per_count=%d", ss, ee, len(res))
-                for r in res:
-                    format_str = ",".join(["{}"] * 24) + "\n"
-                    nft_project_name = r["nft_project_name"]
-                    if r["nft_project_name"] is not None:
-                        if r["nft_project_name"].find(',') != -1:
-                            nft_project_name = r["nft_project_name"].replace(
-                                ',', ' ')
-                    write_str = format_str.format(
-                        r.tx_hash,
-                        r.blockchain,
-                        r.platform,
-                        r.nft_token_id,
-                        r.exchange_contract_address,
-                        r.nft_contract_address,
-                        r.erc_standard,
-                        r.aggregator,
-                        r.number_of_items,
-                        r.trade_type,
-                        r.buyer,
-                        r.seller,
-                        nft_project_name,
-                        0 if r.currency_amount is None else r.currency_amount,
-                        0 if r.usd_amount is None else r.usd_amount,
-                        0 if r.eth_amount is None else r.eth_amount,
-                        0 if r.original_currency_amount is None else r.original_currency_amount,
-                        r.currency_symbol,
-                        r.currency_contract,
-                        r.original_currency_contract,
-                        r.block_time,
-                        r.block_number,
-                        r.tx_from,
-                        r.tx_to)
-                    fw.write(write_str)
-            ccnt += 1
-            if ccnt == 2:
-                break
-            fw.close()
+                if not res:
+                    continue
+                pg_cnt = res[0]["count"]
+                if pg_cnt == row_dict["count"]:
+                    logging.info(
+                        "date=%s no changes. databricks.count=%d postgresql.count=%d", row_dict["date"], row_dict["count"], pg_cnt)
+                    continue
+                logging.info(
+                    "date=%s need update. databricks.count=%d postgresql.count=%d", row_dict["date"], row_dict["count"], pg_cnt)
+
+                fw = open(setting.Settings["datapath"] + "/offline/opensea_trades_%s.csv" %
+                          row_dict["date"], "w", encoding="utf-8")
+                # dumps文件
+                base_ts = time.mktime(time.strptime(
+                    row_dict["date"], "%Y-%m-%d"))
+                if 0 < row_dict["count"] < 5000:
+                    # 整天
+                    step = 1440
+                    interval = list(range(0, 1441, int(step)))
+                elif 5000 <= row_dict["count"] < 10000:
+                    # 半天
+                    step = 1440 / 2
+                    interval = list(range(0, 1441, int(step)))
+                elif 10000 <= row_dict["count"] < 50000:
+                    step = 1440 / 12
+                    interval = list(range(0, 1441, int(step)))
+                else:
+                    step = 1440 / 24
+                    interval = list(range(0, 1441, int(step)))
+
+                interval_date = [time.strftime(
+                    "%Y-%m-%d %H:%M:%S", time.localtime(base_ts + x * 60)) for x in interval]
+                for i in range(0, len(interval_date)-1):
+                    ss = interval_date[i]
+                    ee = interval_date[i+1]
+                    res = dbt_model.select_raw(
+                        """SELECT * FROM opensea_trades \
+                        WHERE block_time >= '%s' AND block_time < '%s' \
+                        """ % (ss, ee)
+                    )
+                    logging.info("[%s, %s] per_count=%d", ss, ee, len(res))
+                    for r in res:
+                        format_str = ",".join(["{}"] * 24) + "\n"
+                        nft_project_name = r["nft_project_name"]
+                        if r["nft_project_name"] is not None:
+                            if r["nft_project_name"].find(',') != -1:
+                                nft_project_name = r["nft_project_name"].replace(
+                                    ',', ' ')
+                        write_str = format_str.format(
+                            r.tx_hash,
+                            r.blockchain,
+                            r.platform,
+                            r.nft_token_id,
+                            r.exchange_contract_address,
+                            r.nft_contract_address,
+                            r.erc_standard,
+                            r.aggregator,
+                            r.number_of_items,
+                            r.trade_type,
+                            r.buyer,
+                            r.seller,
+                            nft_project_name,
+                            0 if r.currency_amount is None else r.currency_amount,
+                            0 if r.usd_amount is None else r.usd_amount,
+                            0 if r.eth_amount is None else r.eth_amount,
+                            0 if r.original_currency_amount is None else r.original_currency_amount,
+                            r.currency_symbol,
+                            r.currency_contract,
+                            r.original_currency_contract,
+                            r.block_time,
+                            r.block_number,
+                            r.tx_from,
+                            r.tx_to)
+                        fw.write(write_str)
+                fw.close()
+            except Exception as ex:
+                logging.exception(ex)
+                fw = open(setting.Settings["datapath"] + "/offline/opensea_trades_%s.fail" %
+                          row_dict["date"], "w", encoding="utf-8")
+                fw.write("%s", repr(ex))
+                fw.close()
 
     def online_dump(self):
         # 1. query postgresql database lastest time

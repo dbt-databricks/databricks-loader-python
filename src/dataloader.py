@@ -35,7 +35,7 @@ if __name__ == '__main__':
     scheduler = BlockingScheduler()
 
     # 每10分钟在线执行任务
-    scheduler.add_job(online_task, 'cron', minute='*/10')
+    # scheduler.add_job(online_task, 'cron', minute='*/10')
 
     # try:
     #     scheduler.start()
