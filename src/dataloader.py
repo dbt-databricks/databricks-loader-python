@@ -3,7 +3,7 @@
 Author: Zella
 Date: 2022-09-13 12:52:40
 LastEditors: Zella
-LastEditTime: 2022-09-19 04:52:45
+LastEditTime: 2022-09-20 12:02:56
 FilePath: /databricks-loader-python/src/dataloader.py
 Description: 
 '''
@@ -15,7 +15,7 @@ from model.postgresql_model import PostgreSQLModel
 from model.databricks_model import DatabricksModel
 from service.opensea_trades import OpenseaTrades
 
-from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.schedulers.background import BackgroundScheduler
 
 
 logging.basicConfig(level=logging.INFO,  # 控制台打印的日志级别
@@ -30,24 +30,29 @@ def online_task():
     OpenseaTrades().online_load(index)
 
 
+def offline_load():
+    OpenseaTrades().offline_load()
+
+
 if __name__ == '__main__':
     setting.load_settings(env="production")
-    scheduler = BlockingScheduler()
+    scheduler = BackgroundScheduler()
 
     # 每10分钟在线执行任务
     # scheduler.add_job(online_task, 'cron', minute='*/10')
 
-    # try:
-    #     scheduler.start()
-    # except (KeyboardInterrupt, SystemExit) as ex:
-    #     logging.exception(ex)
+    # 每10分钟执行load任务
+    scheduler.add_job(offline_load, 'cron', minute='*/10')
 
-    # 离线任务
-    OpenseaTrades().offline_dump(start_date="2022-01-01 00:00:00",
-                                 end_date="2022-09-18 00:00:00")
-
-    OpenseaTrades().offline_load()
-
-    while True:
-        time.sleep(5)
-        logging.info("just sleep for nothing")
+    try:
+        scheduler.start()
+        # 离线任务
+        OpenseaTrades().offline_dump(start_date="2022-01-01 00:00:00",
+                                     end_date="2022-09-18 00:00:00")
+        while True:
+            time.sleep(5)
+            logging.info("just sleep for nothing")
+    except (KeyboardInterrupt, SystemExit) as ex:
+        logging.exception(ex)
+        scheduler.shutdown()
+        print('Exit The Job!')

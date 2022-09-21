@@ -3,7 +3,7 @@
 Author: Zella
 Date: 2022-09-14 00:02:12
 LastEditors: Zella
-LastEditTime: 2022-09-19 04:22:18
+LastEditTime: 2022-09-20 13:19:48
 FilePath: /databricks-loader-python/src/model/postgresql_model.py
 Description: postgresql singleton model
 '''
@@ -33,6 +33,11 @@ class PostgreSQLModel(metaclass=Singleton):
     # host: database host address (defaults to UNIX socket if not provided)
     # port: connection port number (defaults to 5432 if not provided)
     def __init__(self, database, user, password, host, port):
+        self.database = database
+        self.user = user
+        self.password = password
+        self.host = host
+        self.port = port
         self.connection = psycopg2.connect(database=database,
                                            user=user,
                                            password=password,
@@ -43,6 +48,17 @@ class PostgreSQLModel(metaclass=Singleton):
         '''
         description: use connection
         '''
+        return self.connection
+
+    def reconnect(self):
+        '''
+        description: reconnect connection
+        '''
+        self.connection = psycopg2.connect(database=self.database,
+                                           user=self.user,
+                                           password=self.password,
+                                           host=self.host,
+                                           port=self.port)
         return self.connection
 
     def select(self, columns, table_name, where_sql):

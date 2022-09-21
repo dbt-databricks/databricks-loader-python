@@ -3,7 +3,7 @@
 Author: Zella
 Date: 2022-09-13 15:09:19
 LastEditors: Zella
-LastEditTime: 2022-09-19 18:37:28
+LastEditTime: 2022-09-20 15:00:27
 FilePath: /databricks-loader-python/src/service/opensea_trades.py
 Description:
 '''
@@ -13,6 +13,7 @@ import sys
 import time
 import logging
 import setting
+import psycopg2
 from model.postgresql_model import PostgreSQLModel
 from model.databricks_model import DatabricksModel
 
@@ -42,6 +43,13 @@ class OpenseaTrades(object):
         for row in count_result:
             row_dict = row.asDict()
             try:
+                conn = pg_model.get_conn()
+                cur = conn.cursor()
+            except psycopg2.InterfaceError as ex:
+                logging.exception(ex)
+                # reconnect to database
+                pg_model.reconnect()
+            try:
                 start = row_dict["date"] + " 00:00:00"
                 end = row_dict["date"] + " 23:59:59"
                 res = pg_model.select_raw(
@@ -59,8 +67,9 @@ class OpenseaTrades(object):
                 logging.info(
                     "date=%s need update. databricks.count=%d postgresql.count=%d", row_dict["date"], row_dict["count"], pg_cnt)
 
-                fw = open(setting.Settings["datapath"] + "/offline/opensea_trades_%s.csv" %
-                          row_dict["date"], "w", encoding="utf-8")
+                file_path = setting.Settings["datapath"] + \
+                    "/offline/opensea_trades_%s.csv.loading" % row_dict["date"]
+                fw = open(file_path, "w", encoding="utf-8")
                 # dumps文件
                 base_ts = time.mktime(time.strptime(
                     row_dict["date"], "%Y-%m-%d"))
@@ -124,12 +133,13 @@ class OpenseaTrades(object):
                             r.tx_to)
                         fw.write(write_str)
                 fw.close()
+                finish_path = file_path.strip(".loading")
+                os.rename(file_path, finish_path)
             except Exception as ex:
                 logging.exception(ex)
-                fw = open(setting.Settings["datapath"] + "/offline/opensea_trades_%s.fail" %
-                          row_dict["date"], "w", encoding="utf-8")
-                fw.write("%s", repr(ex))
-                fw.close()
+                with open(setting.Settings["datapath"] + "/offline/opensea_trades_%s.fail" %
+                          row_dict["date"], 'a+', encoding='utf-8') as fail:
+                    fail.write(repr(ex))
 
     def online_dump(self):
         # 1. query postgresql database lastest time
@@ -214,25 +224,38 @@ class OpenseaTrades(object):
         data_path = setting.Settings["datapath"] + "/offline"
         for files in os.listdir(data_path):
             ss = time.time()
-            if files.endswith("succ") or files.endswith("fail"):
+            if files.endswith("succ") or files.endswith("fail") or files.endswith("loading"):
                 logging.info("offline load skip %s", files)
                 continue
             file_path = os.path.join(data_path, files)
+            pg_model = PostgreSQLModel(**setting.POSTGRESQL_SETTINGS)
             try:
-                pg_model = PostgreSQLModel(**setting.POSTGRESQL_SETTINGS)
                 conn = pg_model.get_conn()
                 cur = conn.cursor()
                 with open(file_path, "r", encoding="utf-8") as f:
                     # next(f)  # Skip the header row.
                     cur.copy_from(f, 'opensea_trades', sep=',')
                 conn.commit()
-                os.rename(file_path, file_path + ".succ")
+                os.remove(file_path)
+                with open(file_path + ".succ", 'a+', encoding='utf-8') as succ:
+                    succ.truncate(0)
+                logging.info("load %s cost: %.6f", files, time.time() - ss)
+            except psycopg2.InterfaceError as ex:
+                logging.exception(ex)
+                # reconnect to database
+                conn = pg_model.reconnect()
+                cur = conn.cursor()
+                with open(file_path, "r", encoding="utf-8") as f:
+                    cur.copy_from(f, 'opensea_trades', sep=',')
+                conn.commit()
+                os.remove(file_path)
+                with open(file_path + ".succ", 'a+', encoding='utf-8') as succ:
+                    succ.truncate(0)
                 logging.info("load %s cost: %.6f", files, time.time() - ss)
             except Exception as ex:
                 logging.exception(ex)
                 os.rename(file_path, file_path + ".fail")
-            finally:
-                cur.close()
+                logging.info("load %s fail", files)
 
     def online_load(self, index=-1):
         # 导入数据(可能多个文件)
